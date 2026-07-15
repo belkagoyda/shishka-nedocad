@@ -71,6 +71,30 @@
       display: grid !important;
       grid-template-columns: 1fr 55px 55px 55px 90px 28px;
     }
+
+    /* Стили для новых элементов настроек топологии */
+    .topology-settings-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-top: 8px;
+      align-items: center;
+    }
+    .topology-settings-row label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.9rem;
+    }
+    .topology-settings-row input[type="number"] {
+      width: 60px;
+      padding: 3px 4px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    .topology-settings-row input[type="checkbox"] {
+      margin: 0 4px 0 0;
+    }
   </style>
 </head>
 <body>
@@ -89,16 +113,44 @@
   <!-- Разделитель имени -->
   <!-- ================================================================== -->
   <div class="settings-section">
-    <h2>Импорт из Excel (XLSX)</h2>
-    <p>
-        Выберите файл Excel (.xlsx), содержащий листы <strong>models</strong>, <strong>nodes</strong> и <strong>connections</strong>.
-        Заголовки столбцов должны соответствовать полям таблиц (см. <a href="guide.html" target="_blank">инструкцию</a>).
-    </p>
-    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-        <input type="file" id="xlsx-file-input" accept=".xlsx" />
-        <button id="btn-import-xlsx">Импортировать XLSX</button>
-        <span id="xlsx-status" style="color: #555; font-size: 0.9rem;"></span>
+    <h2>Разделитель имени</h2>
+    <p>Символ, используемый при разборе имени ноды на сегменты.</p>
+    <div class="delimiter-input">
+      <label for="delimiter-field">Разделитель:</label>
+      <input type="text" id="delimiter-field" maxlength="3" />
+      <button id="btn-save-delimiter">Сохранить</button>
     </div>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- Настройки отображения топологии -->
+  <!-- ================================================================== -->
+  <div class="settings-section">
+    <h2>Настройки отображения топологии</h2>
+    <p>Регулируйте расстояния между элементами на схеме и стиль линий. Изменения применяются после обновления страницы топологии.</p>
+    <div class="topology-settings-row">
+      <label>
+        Гориз. зазор (px):
+        <input type="number" id="col-gap-input" value="80" min="20" max="300" />
+      </label>
+      <label>
+        Вертик. зазор (px):
+        <input type="number" id="row-gap-input" value="160" min="20" max="400" />
+      </label>
+      <label>
+        Смещение линий (px):
+        <input type="number" id="max-offset-input" value="30" min="5" max="100" />
+      </label>
+      <label>
+        Отступ от края (px):
+        <input type="number" id="node-offset-input" value="8" min="0" max="30" />
+      </label>
+      <label>
+        <input type="checkbox" id="use-straight-lines" /> Прямые линии (без изгибов)
+      </label>
+      <button id="btn-save-topology-settings">Сохранить</button>
+    </div>
+    <span id="topology-settings-status" style="color:green; font-size:0.9rem; display:inline-block; margin-top:8px;"></span>
   </div>
 
   <!-- ================================================================== -->
@@ -164,9 +216,29 @@
     </div>
   </div>
 
+  <!-- ================================================================== -->
+  <!-- Импорт из Excel (XLSX) -->
+  <!-- ================================================================== -->
+  <div class="settings-section">
+    <h2>Импорт из Excel (XLSX)</h2>
+    <p>
+        Выберите файл Excel (.xlsx), содержащий листы <strong>models</strong>, <strong>nodes</strong> и <strong>connections</strong>.
+        Заголовки столбцов должны соответствовать полям таблиц (см. <a href="guide.html" target="_blank">инструкцию</a>).
+    </p>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <input type="file" id="xlsx-file-input" accept=".xlsx" />
+        <button id="btn-import-xlsx">Импортировать XLSX</button>
+        <span id="xlsx-status" style="color: #555; font-size: 0.9rem;"></span>
+    </div>
+  </div>
+
   <div id="status-msg"></div>
   <div id="error-msg"></div>
 
+  <!-- Подключение библиотеки SheetJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <!-- ОСНОВНОЙ СКРИПТ (модуль) -->
   <script type="module">
     import {
       getSchema, saveSchema, DEFAULT_SCHEMA,
@@ -463,15 +535,9 @@
       });
     }
 
-    loadExportFiles();
-  </script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script type="module">
-    // ... существующий код импорта (не трогайте) ...
-
-    // ============================================================
+    // ================================================================
     // Импорт из XLSX
-    // ============================================================
+    // ================================================================
     const xlsxFileInput = document.getElementById('xlsx-file-input');
     const btnImportXlsx = document.getElementById('btn-import-xlsx');
     const xlsxStatus = document.getElementById('xlsx-status');
@@ -520,10 +586,7 @@
             } else {
                 xlsxStatus.textContent =
                     `Импорт выполнен: модели: ${result.models_count}, ноды: ${result.nodes_count}, связи: ${result.connections_count}`;
-                // Обновить список экспортных файлов, если функция существует
-                if (typeof loadExportFiles === 'function') {
-                    loadExportFiles();
-                }
+                loadExportFiles();
             }
         } catch (err) {
             xlsxStatus.textContent = `Ошибка: ${err.message}`;
@@ -533,6 +596,49 @@
     xlsxFileInput.addEventListener('change', () => {
         xlsxStatus.textContent = '';
     });
-</script>
+
+    // ================================================================
+    // Настройки отображения топологии (сохранение/загрузка)
+    // ================================================================
+    const TOPOLOGY_SETTINGS_KEY = 'topologySettings';
+
+    function getTopologySettings() {
+      try {
+        const raw = localStorage.getItem(TOPOLOGY_SETTINGS_KEY);
+        if (raw) return JSON.parse(raw);
+      } catch {}
+      return { colGap: 80, rowGap: 160, maxOffset: 30, nodeOffset: 8, straightLines: false };
+    }
+
+    function saveTopologySettings(settings) {
+      localStorage.setItem(TOPOLOGY_SETTINGS_KEY, JSON.stringify(settings));
+    }
+
+    // Загружаем в поля
+    const settings = getTopologySettings();
+    document.getElementById('col-gap-input').value = settings.colGap;
+    document.getElementById('row-gap-input').value = settings.rowGap;
+    document.getElementById('max-offset-input').value = settings.maxOffset;
+    document.getElementById('node-offset-input').value = settings.nodeOffset;
+    document.getElementById('use-straight-lines').checked = settings.straightLines || false;
+
+    // Сохраняем по клику
+    document.getElementById('btn-save-topology-settings').addEventListener('click', () => {
+      const newSettings = {
+        colGap: parseInt(document.getElementById('col-gap-input').value) || 80,
+        rowGap: parseInt(document.getElementById('row-gap-input').value) || 160,
+        maxOffset: parseInt(document.getElementById('max-offset-input').value) || 30,
+        nodeOffset: parseInt(document.getElementById('node-offset-input').value) || 8,
+        straightLines: document.getElementById('use-straight-lines').checked,
+      };
+      saveTopologySettings(newSettings);
+      const statusEl = document.getElementById('topology-settings-status');
+      statusEl.textContent = 'Настройки сохранены!';
+      setTimeout(() => { statusEl.textContent = ''; }, 3000);
+    });
+
+    // Инициализация списка файлов
+    loadExportFiles();
+  </script>
 </body>
 </html>
