@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Топология — Network Topology Manager</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    #toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    #toolbar label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.95rem;
+      cursor: pointer;
+    }
+    #toolbar button {
+      padding: 5px 14px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background: #f5f5f5;
+    }
+    #toolbar button:hover { background: #e0e0e0; }
+    #export-pdf-btn {
+      background: #0066cc;
+      color: #fff;
+      border-color: #0055aa;
+    }
+    #export-pdf-btn:hover { background: #0055aa; }
+    #topology-container {
+      overflow: auto;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      max-width: 100%;
+      padding: 8px;
+    }
+    #topology-container svg { display: block; }
+    @media (max-width: 800px), (max-height: 800px) {
+      #topology-container {
+        max-width: 100%;
+        max-height: 70vh;
+        overflow: auto;
+      }
+    }
+    @media print {
+      @page { size: A4 landscape; }
+      body { margin: 0; }
+      nav, #toolbar, #error-msg { display: none; }
+      #topology-container { border: none; overflow: visible; }
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="models.html">Модели</a>
+    <a href="nodes.html">Ноды</a>
+    <a href="connections.html">Связи</a>
+    <a href="topology.html" class="active">Топология</a>
+    <a href="settings.html">Настройки</a>
+    <a href="guide.html">Инструкция</a>
+  </nav>
+
+  <h1>Топология сети</h1>
+
+  <div id="toolbar">
+    <label>
+      <input type="checkbox" id="grouping-checkbox" />
+      Группировка по кабинетам
+    </label>
+    <button id="refresh-btn">Обновить</button>
+    <button id="export-pdf-btn">Экспорт PDF</button>
+  </div>
+
+  <div id="error-msg"></div>
+
+  <div id="topology-container"></div>
+
+  <script type="module">
+    import {
+      loadTopologyData,
+      computeLayout,
+      createSvgCanvas,
+      fitSvgToContent,
+      renderNodes,
+      renderConnections,
+      buildNodePositionMap,
+      renderCabinetGroups,
+      layoutNodesGrouped,
+      triggerPdfExport,
+    } from './js/topology_view.js';
+    import { getSchema } from './js/settings.js';
+
+    const container   = document.getElementById('topology-container');
+    const errorMsg    = document.getElementById('error-msg');
+    const groupingCb  = document.getElementById('grouping-checkbox');
+    const exportBtn   = document.getElementById('export-pdf-btn');
+    const refreshBtn  = document.getElementById('refresh-btn');
+
+    let cachedData = null;
+
+    function showError(msg) { errorMsg.textContent = msg; }
+    function clearError()   { errorMsg.textContent = ''; }
+
+    function renderTopology(data) {
+      clearError();
+      container.innerHTML = '';
+
+      const schema = getSchema();
+      const useGrouping = groupingCb.checked;
+
+      const { layoutItems, connections, modelMap } = computeLayout(
+        data.nodes, data.connections, data.models, schema
+      );
+
+      const finalLayoutItems = useGrouping
+        ? layoutNodesGrouped(data.nodes, modelMap, schema)
+        : layoutItems;
+
+      const svg = createSvgCanvas();
+
+      renderNodes(svg, finalLayoutItems, schema);
+
+      const nodePositionMap = buildNodePositionMap(finalLayoutItems);
+      renderConnections(svg, connections, nodePositionMap);
+
+      if (useGrouping) {
+        renderCabinetGroups(svg, finalLayoutItems, schema);
+      }
+
+      fitSvgToContent(svg, finalLayoutItems);
+      container.appendChild(svg);
+    }
+
+    async function loadAndRender() {
+      clearError();
+      container.innerHTML = '<p style="padding:12px;color:#666;">Загрузка...</p>';
+      try {
+        cachedData = await loadTopologyData();
+        renderTopology(cachedData);
+      } catch (err) {
+        container.innerHTML = '';
+        showError('Ошибка загрузки данных: ' + (err.message ?? String(err)));
+      }
+    }
+
+    function rerender() {
+      if (!cachedData) { loadAndRender(); return; }
+      try {
+        renderTopology(cachedData);
+      } catch (err) {
+        showError('Ошибка рендеринга: ' + (err.message ?? String(err)));
+      }
+    }
+
+    groupingCb.addEventListener('change', rerender);
+    exportBtn.addEventListener('click', () => { triggerPdfExport(); });
+    refreshBtn.addEventListener('click', () => { loadAndRender(); });
+
+    loadAndRender();
+  </script>
+</body>
+</html>

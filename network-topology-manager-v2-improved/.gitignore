@@ -1,0 +1,5 @@
+db/db.sqlite
+db/db.sqlite-wal
+db/db.sqlite-shm
+node_modules/
+vendor/

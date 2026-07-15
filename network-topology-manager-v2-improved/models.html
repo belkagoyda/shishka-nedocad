@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Модели оборудования — Network Topology Manager</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { max-width: 900px; }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="models.html" class="active">Модели</a>
+    <a href="nodes.html">Ноды</a>
+    <a href="connections.html">Связи</a>
+    <a href="topology.html">Топология</a>
+    <a href="settings.html">Настройки</a>
+    <a href="guide.html">Инструкция</a>
+  </nav>
+
+  <h1>Каталог моделей оборудования</h1>
+
+  <div id="error-msg"></div>
+
+  <table id="models-table">
+    <thead>
+      <tr>
+        <th>Название</th>
+        <th>Тип</th>
+        <th title="Ранг определяет вертикальное положение устройства на топологии (0 = верх, 10 = низ). Например: ПК = 1, коммутатор = 5, маршрутизатор = 10">Ранг &#9432;</th>
+        <th>Ширина</th>
+        <th>Высота</th>
+        <th>Действия</th>
+      </tr>
+    </thead>
+    <tbody id="models-tbody"></tbody>
+  </table>
+
+  <script type="module">
+    import { initModelsPage } from './js/models.js';
+
+    const tbody = document.getElementById('models-tbody');
+    const errorMsg = document.getElementById('error-msg');
+
+    initModelsPage(tbody, errorMsg);
+  </script>
+</body>
+</html>
