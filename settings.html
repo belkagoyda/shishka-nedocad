@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Настройки</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    body { max-width: 700px; }
+    .settings-section { margin-bottom: 24px; }
+    .settings-section h2 { margin-bottom: 8px; }
+    .settings-section p { margin: 0 0 10px 0; color: #555; font-size: 0.9rem; }
+
+    .item-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 12px 0;
+    }
+    .item-list li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .item-list li input[type="text"],
+    .item-list li input[type="number"] {
+      padding: 4px 6px;
+      font-size: 0.95rem;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    .item-list li input.name-input { flex: 1; }
+    .item-list li input.num-input { width: 50px; text-align: center; }
+    .item-list li select { padding: 4px 6px; font-size: 0.9rem; }
+    .item-list li button {
+      padding: 3px 8px;
+      cursor: pointer;
+    }
+    .btn-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .delimiter-input {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .delimiter-input input {
+      width: 50px;
+      text-align: center;
+      padding: 4px 6px;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+
+    .type-header {
+      display: grid;
+      grid-template-columns: 1fr 55px 55px 55px 90px 28px;
+      gap: 8px;
+      font-weight: bold;
+      font-size: 0.85rem;
+      color: #666;
+      margin-bottom: 4px;
+      padding: 0 0 0 2px;
+    }
+    .types-list li {
+      display: grid !important;
+      grid-template-columns: 1fr 55px 55px 55px 90px 28px;
+    }
+  </style>
+</head>
+<body>
+  <nav>
+    <a href="models.html">Модели</a>
+    <a href="nodes.html">Ноды</a>
+    <a href="connections.html">Связи</a>
+    <a href="topology.html">Топология</a>
+    <a href="settings.html" class="active">Настройки</a>
+    <a href="guide.html">Инструкция</a>
+  </nav>
+
+  <h1>Настройки</h1>
+
+  <!-- ================================================================== -->
+  <!-- Разделитель имени -->
+  <!-- ================================================================== -->
+  <div class="settings-section">
+    <h2>Импорт из Excel (XLSX)</h2>
+    <p>
+        Выберите файл Excel (.xlsx), содержащий листы <strong>models</strong>, <strong>nodes</strong> и <strong>connections</strong>.
+        Заголовки столбцов должны соответствовать полям таблиц (см. <a href="guide.html" target="_blank">инструкцию</a>).
+    </p>
+    <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+        <input type="file" id="xlsx-file-input" accept=".xlsx" />
+        <button id="btn-import-xlsx">Импортировать XLSX</button>
+        <span id="xlsx-status" style="color: #555; font-size: 0.9rem;"></span>
+    </div>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- Схема сегментов -->
+  <!-- ================================================================== -->
+  <div class="settings-section">
+    <h2>Схема сегментов имени</h2>
+    <p>Задайте метки сегментов имени ноды. Порядок важен.</p>
+
+    <ul id="schema-list" class="item-list"></ul>
+
+    <div class="btn-row">
+      <button id="btn-add-segment">+ Добавить сегмент</button>
+      <button id="btn-save-schema">Сохранить</button>
+      <button id="btn-reset-schema">Сбросить</button>
+    </div>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- Типы оборудования -->
+  <!-- ================================================================== -->
+  <div class="settings-section">
+    <h2>Типы оборудования</h2>
+    <p>Задайте типы оборудования с дефолтами rank/width/height и ролью для автосвязей.</p>
+
+    <div class="type-header">
+      <span>Название</span>
+      <span>Ранг</span>
+      <span>Шир.</span>
+      <span>Выс.</span>
+      <span>Роль</span>
+      <span></span>
+    </div>
+    <ul id="types-list" class="item-list types-list"></ul>
+
+    <div class="btn-row">
+      <button id="btn-add-type">+ Добавить тип</button>
+      <button id="btn-save-types">Сохранить</button>
+      <button id="btn-reset-types">Сбросить</button>
+    </div>
+  </div>
+
+  <!-- ================================================================== -->
+  <!-- Экспорт / Импорт данных -->
+  <!-- ================================================================== -->
+  <div class="settings-section">
+    <h2>Экспорт / Импорт данных</h2>
+    <p>Экспорт сохраняет все модели, ноды и связи в JSON-файл в директории <code>/srv</code>. Импорт восстанавливает данные из файла.</p>
+
+    <div class="btn-row" style="margin-bottom:12px;">
+      <button id="btn-export">Экспорт данных</button>
+      <button id="btn-refresh-files">Обновить список файлов</button>
+    </div>
+
+    <div id="export-files-container">
+      <table id="export-files-table" style="display:none; width:100%; font-size:0.9rem;">
+        <thead>
+          <tr><th>Файл</th><th>Размер</th><th>Дата</th><th>Действие</th></tr>
+        </thead>
+        <tbody id="export-files-tbody"></tbody>
+      </table>
+      <p id="no-files-msg" style="color:#888; font-size:0.9rem; display:none;">Файлы экспорта не найдены.</p>
+    </div>
+  </div>
+
+  <div id="status-msg"></div>
+  <div id="error-msg"></div>
+
+  <script type="module">
+    import {
+      getSchema, saveSchema, DEFAULT_SCHEMA,
+      getDelimiter, saveDelimiter, DEFAULT_DELIMITER,
+      getCabinetIndex, saveCabinetIndex,
+      getDeviceTypes, saveDeviceTypes, DEFAULT_DEVICE_TYPES,
+    } from './js/settings.js';
+
+    // ---- DOM refs ----
+    const delimiterField  = document.getElementById('delimiter-field');
+    const schemaList      = document.getElementById('schema-list');
+    const typesList       = document.getElementById('types-list');
+    const statusMsg       = document.getElementById('status-msg');
+    const errorMsg        = document.getElementById('error-msg');
+
+    // ---- Helpers ----
+    function showStatus(msg) {
+      statusMsg.textContent = msg;
+      errorMsg.textContent = '';
+      setTimeout(() => { statusMsg.textContent = ''; }, 3000);
+    }
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      statusMsg.textContent = '';
+    }
+
+    // ================================================================
+    // Delimiter
+    // ================================================================
+    delimiterField.value = getDelimiter();
+
+    document.getElementById('btn-save-delimiter').addEventListener('click', () => {
+      const val = delimiterField.value;
+      if (!val) { showError('Разделитель не может быть пустым.'); return; }
+      try {
+        saveDelimiter(val);
+        showStatus('Разделитель сохранён.');
+      } catch (e) { showError(e.message); }
+    });
+
+    // ================================================================
+    // Schema segments
+    // ================================================================
+    function renderSchemaList(segments) {
+      schemaList.innerHTML = '';
+      segments.forEach((label, i) => {
+        schemaList.appendChild(createSchemaItem(label, i));
+      });
+    }
+
+    function createSchemaItem(label, index) {
+      const li = document.createElement('li');
+
+      const input = document.createElement('input');
+      input.type = 'text';
+      input.value = label;
+      input.placeholder = `Сегмент ${index + 1}`;
+      input.className = 'name-input';
+
+      const btnUp = document.createElement('button');
+      btnUp.textContent = '\u2191';
+      btnUp.title = 'Вверх';
+      btnUp.addEventListener('click', () => moveItem(schemaList, li, -1));
+
+      const btnDown = document.createElement('button');
+      btnDown.textContent = '\u2193';
+      btnDown.title = 'Вниз';
+      btnDown.addEventListener('click', () => moveItem(schemaList, li, 1));
+
+      const btnRemove = document.createElement('button');
+      btnRemove.textContent = '\u2715';
+      btnRemove.addEventListener('click', () => {
+        if (schemaList.children.length > 1) li.remove();
+        else showError('Схема должна содержать хотя бы один сегмент.');
+      });
+
+      li.appendChild(input);
+      li.appendChild(btnUp);
+      li.appendChild(btnDown);
+      li.appendChild(btnRemove);
+      return li;
+    }
+
+    function collectSchemaSegments() {
+      return Array.from(schemaList.querySelectorAll('input.name-input'))
+        .map((inp) => inp.value.trim());
+    }
+
+    document.getElementById('btn-add-segment').addEventListener('click', () => {
+      const li = createSchemaItem('', schemaList.children.length);
+      schemaList.appendChild(li);
+      li.querySelector('input').focus();
+    });
+
+    document.getElementById('btn-save-schema').addEventListener('click', () => {
+      const segments = collectSchemaSegments();
+      if (segments.some((s) => !s)) { showError('Все метки сегментов должны быть непустыми.'); return; }
+      try {
+        saveSchema(segments);
+        showStatus('Схема сохранена.');
+      } catch (e) { showError(e.message); }
+    });
+
+    document.getElementById('btn-reset-schema').addEventListener('click', () => {
+      renderSchemaList([...DEFAULT_SCHEMA]);
+      showStatus('Схема сброшена (не сохранена).');
+    });
+
+    renderSchemaList(getSchema());
+
+    // ================================================================
+    // Device types
+    // ================================================================
+    const ROLE_OPTIONS = [
+      { value: 'endpoint', label: 'Конечное' },
+      { value: 'switch',   label: 'Коммутатор' },
+      { value: 'router',   label: 'Маршрутизатор' },
+    ];
+
+    function renderTypesList(types) {
+      typesList.innerHTML = '';
+      types.forEach((t) => {
+        typesList.appendChild(createTypeItem(t));
+      });
+    }
+
+    function createTypeItem(t) {
+      const li = document.createElement('li');
+
+      const inputName = document.createElement('input');
+      inputName.type = 'text';
+      inputName.value = t.name || '';
+      inputName.placeholder = 'Название';
+      inputName.className = 'name-input';
+      inputName.dataset.field = 'name';
+
+      const inputRank = document.createElement('input');
+      inputRank.type = 'number';
+      inputRank.min = '0';
+      inputRank.max = '10';
+      inputRank.value = t.rank ?? 1;
+      inputRank.className = 'num-input';
+      inputRank.dataset.field = 'rank';
+
+      const inputWidth = document.createElement('input');
+      inputWidth.type = 'number';
+      inputWidth.value = t.width ?? 40;
+      inputWidth.className = 'num-input';
+      inputWidth.dataset.field = 'width';
+
+      const inputHeight = document.createElement('input');
+      inputHeight.type = 'number';
+      inputHeight.value = t.height ?? 12;
+      inputHeight.className = 'num-input';
+      inputHeight.dataset.field = 'height';
+
+      const selectRole = document.createElement('select');
+      selectRole.dataset.field = 'role';
+      ROLE_OPTIONS.forEach((opt) => {
+        const o = document.createElement('option');
+        o.value = opt.value;
+        o.textContent = opt.label;
+        if (opt.value === (t.role || 'endpoint')) o.selected = true;
+        selectRole.appendChild(o);
+      });
+
+      const btnRemove = document.createElement('button');
+      btnRemove.textContent = '\u2715';
+      btnRemove.addEventListener('click', () => {
+        if (typesList.children.length > 1) li.remove();
+        else showError('Должен быть хотя бы один тип.');
+      });
+
+      li.appendChild(inputName);
+      li.appendChild(inputRank);
+      li.appendChild(inputWidth);
+      li.appendChild(inputHeight);
+      li.appendChild(selectRole);
+      li.appendChild(btnRemove);
+      return li;
+    }
+
+    function collectTypes() {
+      return Array.from(typesList.children).map((li) => ({
+        name:   li.querySelector('[data-field="name"]').value.trim(),
+        rank:   Number(li.querySelector('[data-field="rank"]').value) || 1,
+        width:  Number(li.querySelector('[data-field="width"]').value) || 40,
+        height: Number(li.querySelector('[data-field="height"]').value) || 12,
+        role:   li.querySelector('[data-field="role"]').value,
+      }));
+    }
+
+    document.getElementById('btn-add-type').addEventListener('click', () => {
+      const li = createTypeItem({ name: '', rank: 1, width: 40, height: 12, role: 'endpoint' });
+      typesList.appendChild(li);
+      li.querySelector('input').focus();
+    });
+
+    document.getElementById('btn-save-types').addEventListener('click', () => {
+      const types = collectTypes();
+      if (types.some((t) => !t.name)) { showError('Все названия типов должны быть непустыми.'); return; }
+      try {
+        saveDeviceTypes(types);
+        showStatus('Типы оборудования сохранены.');
+      } catch (e) { showError(e.message); }
+    });
+
+    document.getElementById('btn-reset-types').addEventListener('click', () => {
+      renderTypesList(DEFAULT_DEVICE_TYPES.map((t) => ({ ...t })));
+      showStatus('Типы сброшены (не сохранены).');
+    });
+
+    renderTypesList(getDeviceTypes());
+
+    // ---- Generic list item move ----
+    function moveItem(list, li, direction) {
+      if (direction === -1) {
+        const prev = li.previousElementSibling;
+        if (prev) list.insertBefore(li, prev);
+      } else {
+        const next = li.nextElementSibling;
+        if (next) list.insertBefore(next, li);
+      }
+    }
+
+    // ================================================================
+    // Export / Import
+    // ================================================================
+    const exportFilesTable = document.getElementById('export-files-table');
+    const exportFilesTbody = document.getElementById('export-files-tbody');
+    const noFilesMsg = document.getElementById('no-files-msg');
+
+    document.getElementById('btn-export').addEventListener('click', async () => {
+      try {
+        const resp = await fetch('/api/export');
+        const data = await resp.json();
+        if (!resp.ok) { showError(data.error || 'Ошибка экспорта'); return; }
+        showStatus(`Экспорт выполнен: ${data.filename} (модели: ${data.models_count}, ноды: ${data.nodes_count}, связи: ${data.connections_count})`);
+        loadExportFiles();
+      } catch (e) { showError('Ошибка экспорта: ' + e.message); }
+    });
+
+    document.getElementById('btn-refresh-files').addEventListener('click', loadExportFiles);
+
+    async function loadExportFiles() {
+      try {
+        const resp = await fetch('/api/export/list');
+        const files = await resp.json();
+        if (!resp.ok) { showError(files.error || 'Ошибка загрузки списка'); return; }
+        renderExportFiles(files);
+      } catch (e) { showError('Ошибка: ' + e.message); }
+    }
+
+    function renderExportFiles(files) {
+      exportFilesTbody.innerHTML = '';
+      if (files.length === 0) {
+        exportFilesTable.style.display = 'none';
+        noFilesMsg.style.display = 'block';
+        return;
+      }
+      exportFilesTable.style.display = '';
+      noFilesMsg.style.display = 'none';
+      files.forEach((f) => {
+        const tr = document.createElement('tr');
+        const tdName = document.createElement('td');
+        tdName.textContent = f.filename;
+        tdName.style.wordBreak = 'break-all';
+        const tdSize = document.createElement('td');
+        tdSize.textContent = (f.size / 1024).toFixed(1) + ' KB';
+        const tdDate = document.createElement('td');
+        tdDate.textContent = f.modified;
+        const tdAction = document.createElement('td');
+        const btnImport = document.createElement('button');
+        btnImport.textContent = 'Импорт';
+        btnImport.addEventListener('click', async () => {
+          if (!confirm(`Импортировать данные из "${f.filename}"?\n\nВнимание: все текущие данные будут заменены!`)) return;
+          try {
+            const resp = await fetch('/api/import', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ filename: f.filename }),
+            });
+            const data = await resp.json();
+            if (!resp.ok) { showError(data.error || 'Ошибка импорта'); return; }
+            showStatus(`Импорт выполнен: модели: ${data.models_count}, ноды: ${data.nodes_count}, связи: ${data.connections_count}`);
+          } catch (e) { showError('Ошибка импорта: ' + e.message); }
+        });
+        tdAction.appendChild(btnImport);
+        tr.appendChild(tdName);
+        tr.appendChild(tdSize);
+        tr.appendChild(tdDate);
+        tr.appendChild(tdAction);
+        exportFilesTbody.appendChild(tr);
+      });
+    }
+
+    loadExportFiles();
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script type="module">
+    // ... существующий код импорта (не трогайте) ...
+
+    // ============================================================
+    // Импорт из XLSX
+    // ============================================================
+    const xlsxFileInput = document.getElementById('xlsx-file-input');
+    const btnImportXlsx = document.getElementById('btn-import-xlsx');
+    const xlsxStatus = document.getElementById('xlsx-status');
+
+    btnImportXlsx.addEventListener('click', async () => {
+        const file = xlsxFileInput.files[0];
+        if (!file) {
+            xlsxStatus.textContent = 'Выберите файл.';
+            return;
+        }
+
+        xlsxStatus.textContent = 'Чтение файла...';
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+
+            const sheetNames = workbook.SheetNames;
+            const requiredSheets = ['models', 'nodes', 'connections'];
+            const missing = requiredSheets.filter(name => !sheetNames.includes(name));
+            if (missing.length) {
+                xlsxStatus.textContent = `Ошибка: отсутствуют листы: ${missing.join(', ')}`;
+                return;
+            }
+
+            const models = XLSX.utils.sheet_to_json(workbook.Sheets['models']);
+            const nodes = XLSX.utils.sheet_to_json(workbook.Sheets['nodes']);
+            const connections = XLSX.utils.sheet_to_json(workbook.Sheets['connections']);
+
+            if (models.length === 0 && nodes.length === 0 && connections.length === 0) {
+                xlsxStatus.textContent = 'Файл не содержит данных (все листы пусты).';
+                return;
+            }
+
+            const payload = { models, nodes, connections };
+
+            xlsxStatus.textContent = 'Отправка на сервер...';
+            const resp = await fetch('/api/import-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+            });
+
+            const result = await resp.json();
+            if (!resp.ok) {
+                xlsxStatus.textContent = `Ошибка: ${result.error || resp.statusText}`;
+            } else {
+                xlsxStatus.textContent =
+                    `Импорт выполнен: модели: ${result.models_count}, ноды: ${result.nodes_count}, связи: ${result.connections_count}`;
+                // Обновить список экспортных файлов, если функция существует
+                if (typeof loadExportFiles === 'function') {
+                    loadExportFiles();
+                }
+            }
+        } catch (err) {
+            xlsxStatus.textContent = `Ошибка: ${err.message}`;
+        }
+    });
+
+    xlsxFileInput.addEventListener('change', () => {
+        xlsxStatus.textContent = '';
+    });
+</script>
+</body>
+</html>
